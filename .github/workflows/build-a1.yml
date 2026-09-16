@@ -42,6 +42,11 @@ jobs:
               s=re.sub(r'<div class="photo-grid">.*?</div>\s*(?=<div class="section-head">)','',s,count=1,flags=re.S)
               s=re.sub(r'<div class="photo">\s*<img[^>]*>\s*</div>','',s,flags=re.S)
               s=re.sub(r'<img[^>]+src="(?:consultation|xray-review|reception)\.(?:jpg|jpeg|png|webp)"[^>]*>','',s,flags=re.I)
+            if fn == 'about.html':
+              photo='''\n  <div class="photo"><img src="https://img4.dentists10.com/676/754/1153868126767543.jpg" alt="A1 Clinic, Tbilisi" loading="lazy"></div>\n'''
+              marker='  <div class="section-head">'
+              if marker in s:
+                s=s.replace(marker,photo+'\n'+marker,1)
             p.write_text(s,encoding='utf-8')
           p=Path('index.html'); s=p.read_text(encoding='utf-8')
           s=s.replace('Здоровые зубы — <em>без очередей и звонков</em>','A1 — <em>современная стоматология в центре Тбилиси</em>').replace('ჯანმრთელი კბილები — <em>რიგებისა და ზარების გარეშე</em>','A1 — <em>თანამედროვე სტომატოლოგია თბილისის ცენტრში</em>').replace('Healthy teeth — <em>without queues or phone calls</em>','A1 — <em>modern dentistry in central Tbilisi</em>')
@@ -68,5 +73,5 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add index.html about.html tips.html staff.html Code.gs a1-logo.svg
-          git commit -m "Rebuild A1 cleanly from template" || exit 0
+          git commit -m "Rebuild A1 with one clinic photo" || exit 0
           git push
