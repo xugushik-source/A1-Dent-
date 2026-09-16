@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1 — кабинет врача</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F2FAF9; --surface:#FFFFFF; --ink:#183333;
+    --teal:#176B68; --teal-light:#45AAA0;
+    --gold:#C9974A; --gold-light:#E3B876;
+    --muted:#6E8177; --danger:#C0483A;
+    --draft:#C9974A; --done:#3E7A5C;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;}
+  .wrap{max-width:520px; margin:0 auto; padding:20px 16px 60px;}
+  h1{font-family:'Fraunces',serif; font-size:22px; color:var(--teal); margin:6px 0 16px;}
+  .brand{display:flex; align-items:center; gap:12px; margin:6px 0 16px;}
+  .brand img{height:46px; width:auto;}
+  .brand-text{display:flex; flex-direction:column;}
+  .brand h1{margin:0; font-size:15px; font-weight:500; letter-spacing:.13em; text-transform:uppercase;}
+  .brand-rule{width:30px; height:1.5px; background:var(--gold); margin-top:3px;}
+  .tabs{display:flex; gap:6px; margin-bottom:16px; overflow-x:auto;}
+  .tab{flex:0 0 auto; padding:9px 14px; border-radius:20px; background:#E9EEE7; color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;}
+  .tab.active{background:var(--teal); color:#fff;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .card{background:var(--surface); border-radius:var(--radius); padding:16px; margin-bottom:12px; box-shadow:0 1px 3px rgba(30,61,54,.08);}
+  .visit-row{display:flex; justify-content:space-between; align-items:center; cursor:pointer;}
+  .visit-time{font-weight:700; color:var(--teal); font-variant-numeric:tabular-nums; min-width:50px;}
+  .visit-name{font-weight:600;}
+  .visit-phone{color:var(--muted); font-size:13px;}
+  .badge{font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; color:#fff; text-transform:uppercase; letter-spacing:.03em;}
+  .badge.черновик{background:var(--draft);}
+  .badge.завершено{background:var(--done);}
+  .badge.отменено{background:#9AA79E;}
+  .edit-panel{margin-top:12px; padding-top:12px; border-top:1px solid #EDF1EB; display:none;}
+  .edit-panel.open{display:block;}
+  label{display:block; font-size:12px; font-weight:600; color:var(--teal); margin-bottom:4px; margin-top:10px;}
+  input, textarea{width:100%; padding:10px 12px; border:1.5px solid #E1E8E0; border-radius:9px; font-family:'Inter',sans-serif; font-size:14px; background:#FBFCFA;}
+  textarea{resize:vertical; min-height:60px;}
+  button{border:none; border-radius:9px; padding:11px 16px; font-weight:700; font-size:14px; cursor:pointer;}
+  button.save{background:var(--teal); color:#fff; margin-top:12px; width:100%;}
+  button.book{background:var(--gold); color:#fff; width:100%; margin-top:6px;}
+  .empty-note{color:var(--muted); font-size:14px; padding:6px 0;}
+  .slots{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:4px 0 10px;}
+  .slot{
+    border:1.5px dashed #C9D6C6; background:#FBFCFA; border-radius:9px; padding:9px 4px;
+    text-align:center; font-weight:600; font-variant-numeric:tabular-nums; font-size:13px;
+    color:var(--teal); cursor:pointer;
+  }
+  .slot.selected{background:var(--teal); border-style:solid; border-color:var(--teal); color:#fff;}
+  .datebar{display:flex; gap:8px; align-items:center; margin-bottom:12px;}
+  .datebar input{flex:1;}
+  .history-item{padding:10px 0; border-bottom:1px solid #EDF1EB; font-size:14px;}
+  .history-item:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><img src="a1-logo.svg" alt="A1"><div class="brand-text"><h1>A1</h1><div class="brand-rule"></div></div></div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="today">Сегодня</div>
+    <div class="tab" data-tab="all">Все записи</div>
+    <div class="tab" data-tab="new">Новая запись</div>
+    <div class="tab" data-tab="search">Поиск клиента</div>
+  </div>
+
+  <div class="panel active" id="panel-today"></div>
+
+  <div class="panel" id="panel-all">
+    <div class="datebar"><input type="date" id="allDate"></div>
+    <div id="allList"></div>
+  </div>
+
+  <div class="panel" id="panel-new">
+    <div class="card">
+      <label>Дата</label><input type="date" id="nDate">
+      <label>Время</label>
+      <div id="nSlotsBox"><div class="empty-note">Выберите дату, чтобы увидеть свободное время.</div></div>
+      <label>Имя</label><input type="text" id="nName">
+      <label>Фамилия</label><input type="text" id="nLastName">
+      <label>Телефон</label><input type="tel" id="nPhone">
+      <label>Зуб (если уже знаете)</label><input type="text" id="nTooth" placeholder="напр. 26">
+      <label>Процедура</label><input type="text" id="nProcedure" placeholder="напр. пломба">
+      <label>Заметка</label><textarea id="nNote"></textarea>
+      <div id="nError" style="color:var(--danger); font-size:13px; margin-top:8px;"></div>
+      <button class="book" id="nSubmit">Записать</button>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-search">
+    <div class="card">
+      <label>Телефон клиента</label>
+      <input type="tel" id="sPhone" placeholder="+995 5XX XX XX XX">
+      <button class="save" id="sSubmit">Найти</button>
+    </div>
+    <div id="sResult"></div>
+  </div>
+</div>
+
+<script>
+  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxV1pi-zzsR7wZKEquYHu49gxslqbBu40cJcLvZ3RhtCFejJ04Ephwz_DfJXM2GTVncCA/exec';
+
+  function apiCall(action, payload) {
+    if (!WEB_APP_URL || WEB_APP_URL.indexOf('ВСТАВЬ_СЮДА') !== -1) {
+      return Promise.resolve({ ok: false, error: 'Ещё не подключено к таблице — не вставлена ссылка WEB_APP_URL.' });
+    }
+    return fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ action: action }, payload))
+    }).then(r => r.json())
+      .catch(function () {
+        return { ok: false, error: 'Не получилось связаться с сервером. Проверь интернет или ссылку WEB_APP_URL.' };
+      });
+  }
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+      if (tab.dataset.tab === 'today') loadToday();
+      if (tab.dataset.tab === 'all') loadAll();
+    });
+  });
+
+  function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+  function renderVisits(container, visits) {
+    if (!visits.length) {
+      container.innerHTML = '<div class="empty-note">Записей нет.</div>';
+      return;
+    }
+    container.innerHTML = visits.map(v => visitCardHtml(v)).join('');
+    visits.forEach(v => {
+      document.getElementById('row-' + v.id).addEventListener('click', () => toggleEdit(v.id));
+      document.getElementById('save-' + v.id).addEventListener('click', (e) => { e.stopPropagation(); saveVisit(v.id); });
+      document.getElementById('rdate-' + v.id).addEventListener('change', (e) => {
+        e.stopPropagation();
+        loadRescheduleSlots(v.id, document.getElementById('rdate-' + v.id).value);
+      });
+      document.getElementById('rbtn-' + v.id).addEventListener('click', (e) => {
+        e.stopPropagation();
+        rescheduleVisitUI(v.id, document.getElementById('rdate-' + v.id).value);
+      });
+      document.getElementById('cancel-' + v.id).addEventListener('click', (e) => {
+        e.stopPropagation();
+        cancelVisitUI(v.id);
+      });
+    });
+  }
+
+  function visitCardHtml(v) {
+    return '<div class="card" id="card-' + v.id + '">' +
+      '<div class="visit-row" id="row-' + v.id + '">' +
+        '<div><span class="visit-time">' + v.time + '</span> &nbsp; <span class="visit-name">' + (v.lastName || '') + ' ' + (v.name || '') + '</span><div class="visit-phone">' + v.phone + '</div></div>' +
+        '<div class="badge ' + v.status + '">' + v.status + '</div>' +
+      '</div>' +
+      '<div class="edit-panel" id="edit-' + v.id + '">' +
+        '<label>Зуб</label><input type="text" id="tooth-' + v.id + '" value="' + (v.tooth || '') + '">' +
+        '<label>Процедура</label><input type="text" id="proc-' + v.id + '" value="' + (v.procedure || '') + '">' +
+        '<label>Заметка</label><textarea id="note-' + v.id + '">' + (v.note || '') + '</textarea>' +
+        '<label>Цена</label><input type="text" id="price-' + v.id + '" value="' + (v.price || '') + '">' +
+        '<button class="save" id="save-' + v.id + '">Сохранить</button>' +
+        '<div style="margin-top:16px; padding-top:14px; border-top:1px dashed #E1E8E0;">' +
+          '<label>Перенести на</label>' +
+          '<input type="date" id="rdate-' + v.id + '">' +
+          '<div id="rslots-' + v.id + '"><div class="empty-note">Выберите новую дату</div></div>' +
+          '<button class="book" id="rbtn-' + v.id + '" style="margin-top:8px;">Перенести</button>' +
+          '<div id="rmsg-' + v.id + '" style="font-size:12px; margin-top:6px;"></div>' +
+        '</div>' +
+        '<button id="cancel-' + v.id + '" style="background:var(--danger); color:#fff; width:100%; margin-top:12px; border:none; border-radius:9px; padding:11px 16px; font-weight:700; font-size:14px; cursor:pointer;">Отменить запись</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function toggleEdit(id) { document.getElementById('edit-' + id).classList.toggle('open'); }
+
+  const rescheduleSelections = {};
+
+  function loadRescheduleSlots(id, date) {
+    const box = document.getElementById('rslots-' + id);
+    rescheduleSelections[id] = null;
+    if (!date) { box.innerHTML = '<div class="empty-note">Выберите новую дату</div>'; return; }
+    box.innerHTML = '<div class="empty-note">Загрузка…</div>';
+    apiCall('getSlots', { date: date }).then(res => {
+      if (!res.ok) { box.innerHTML = '<div class="empty-note">Ошибка.</div>'; return; }
+      const slots = res.data;
+      if (!slots.length) { box.innerHTML = '<div class="empty-note">Свободного времени нет.</div>'; return; }
+      box.innerHTML = '<div class="slots">' + slots.map(s => '<div class="slot" data-time="' + s + '">' + s + '</div>').join('') + '</div>';
+      box.querySelectorAll('.slot').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          box.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+          el.classList.add('selected');
+          rescheduleSelections[id] = el.dataset.time;
+        });
+      });
+    });
+  }
+
+  function rescheduleVisitUI(id, date) {
+    const msgEl = document.getElementById('rmsg-' + id);
+    const time = rescheduleSelections[id];
+    if (!date || !time) {
+      msgEl.style.color = 'var(--danger)';
+      msgEl.textContent = 'Выберите новую дату и время.';
+      return;
+    }
+    apiCall('reschedule', { id: id, date: date, time: time }).then(res => {
+      if (!res.ok) {
+        msgEl.style.color = 'var(--danger)';
+        msgEl.textContent = res.error || 'Не получилось перенести.';
+        return;
+      }
+      msgEl.style.color = 'var(--done)';
+      msgEl.textContent = 'Перенесено на ' + date + ', ' + time + '.';
+      const timeEl = document.querySelector('#row-' + id + ' .visit-time');
+      if (timeEl) timeEl.textContent = time;
+    });
+  }
+
+  function cancelVisitUI(id) {
+    if (!confirm('Точно отменить эту запись?')) return;
+    apiCall('cancel', { id: id }).then(res => {
+      if (!res.ok) { alert(res.error || 'Не получилось отменить.'); return; }
+      const badge = document.querySelector('#card-' + id + ' .badge');
+      badge.textContent = 'отменено';
+      badge.className = 'badge отменено';
+      document.getElementById('edit-' + id).classList.remove('open');
+    });
+  }
+
+  function saveVisit(id) {
+    apiCall('updateVisit', {
+      id: id,
+      tooth: document.getElementById('tooth-' + id).value,
+      procedure: document.getElementById('proc-' + id).value,
+      note: document.getElementById('note-' + id).value,
+      price: document.getElementById('price-' + id).value
+    }).then(res => {
+      if (res.ok) {
+        const badge = document.querySelector('#card-' + id + ' .badge');
+        badge.textContent = 'завершено';
+        badge.className = 'badge завершено';
+      }
+    });
+  }
+
+  function loadToday() {
+    const container = document.getElementById('panel-today');
+    container.innerHTML = '<div class="empty-note">Загрузка…</div>';
+    apiCall('listVisits', { date: todayStr() }).then(res => {
+      if (!res.ok) { container.innerHTML = '<div class="empty-note">Ошибка.</div>'; return; }
+      renderVisits(container, res.data);
+    });
+  }
+
+  function loadAll() {
+    const dateInput = document.getElementById('allDate');
+    const listEl = document.getElementById('allList');
+    listEl.innerHTML = '<div class="empty-note">Загрузка…</div>';
+    apiCall('listVisits', { date: dateInput.value || null }).then(res => {
+      if (!res.ok) { listEl.innerHTML = '<div class="empty-note">Ошибка.</div>'; return; }
+      renderVisits(listEl, res.data);
+    });
+  }
+  document.getElementById('allDate').addEventListener('change', loadAll);
+
+  let nSelectedTime = null;
+  const nSlotsBox = document.getElementById('nSlotsBox');
+
+  function loadNewBookingSlots() {
+    const date = document.getElementById('nDate').value;
+    nSelectedTime = null;
+    if (!date) {
+      nSlotsBox.innerHTML = '<div class="empty-note">Выберите дату, чтобы увидеть свободное время.</div>';
+      return;
+    }
+    nSlotsBox.innerHTML = '<div class="empty-note">Загрузка…</div>';
+    apiCall('getSlots', { date: date }).then(res => {
+      if (!res.ok) { nSlotsBox.innerHTML = '<div class="empty-note">Ошибка загрузки.</div>'; return; }
+      const slots = res.data;
+      if (!slots.length) {
+        nSlotsBox.innerHTML = '<div class="empty-note">На эту дату свободного времени нет.</div>';
+        return;
+      }
+      nSlotsBox.innerHTML = '<div class="slots">' +
+        slots.map(s => '<div class="slot" data-time="' + s + '">' + s + '</div>').join('') +
+        '</div>';
+      nSlotsBox.querySelectorAll('.slot').forEach(el => {
+        el.addEventListener('click', () => {
+          nSlotsBox.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+          el.classList.add('selected');
+          nSelectedTime = el.dataset.time;
+        });
+      });
+    });
+  }
+  document.getElementById('nDate').addEventListener('change', loadNewBookingSlots);
+
+  document.getElementById('nSubmit').addEventListener('click', () => {
+    const date = document.getElementById('nDate').value;
+    const time = nSelectedTime;
+    const name = document.getElementById('nName').value.trim();
+    const lastName = document.getElementById('nLastName').value.trim();
+    const phone = document.getElementById('nPhone').value.trim();
+    const tooth = document.getElementById('nTooth').value.trim();
+    const procedure = document.getElementById('nProcedure').value.trim();
+    const note = document.getElementById('nNote').value.trim();
+    const errEl = document.getElementById('nError');
+
+    if (!date || !time || !name || !phone) {
+      errEl.style.color = 'var(--danger)';
+      errEl.textContent = 'Заполните дату, выберите время, имя и телефон.';
+      return;
+    }
+    apiCall('bookManual', { date, time, name, lastName, phone, tooth, procedure, note }).then(res => {
+      if (!res.ok) {
+        errEl.style.color = 'var(--danger)';
+        errEl.textContent = res.error || 'Не получилось записать.';
+        return;
+      }
+      errEl.style.color = 'var(--done)';
+      errEl.textContent = 'Записано.';
+      ['nDate', 'nName', 'nLastName', 'nPhone', 'nTooth', 'nProcedure', 'nNote'].forEach(id => document.getElementById(id).value = '');
+      nSelectedTime = null;
+      nSlotsBox.innerHTML = '<div class="empty-note">Выберите дату, чтобы увидеть свободное время.</div>';
+    });
+  });
+
+  document.getElementById('sSubmit').addEventListener('click', () => {
+    const phone = document.getElementById('sPhone').value.trim();
+    const resultEl = document.getElementById('sResult');
+    resultEl.innerHTML = '<div class="empty-note">Ищем…</div>';
+    apiCall('searchPatient', { phone }).then(res => {
+      if (!res.ok || !res.data.found) {
+        resultEl.innerHTML = '<div class="empty-note">Клиент не найден.</div>';
+        return;
+      }
+      const p = res.data;
+      let html = '<div class="card"><strong>' + p.lastName + ' ' + p.name + '</strong><div class="visit-phone">' + phone + '</div>';
+      if (!p.visits.length) {
+        html += '<div class="empty-note">Визитов пока не было.</div>';
+      } else {
+        html += p.visits.map(v =>
+          '<div class="history-item"><strong>' + v.date + ' ' + v.time + '</strong> — ' +
+          (v.procedure || 'без процедуры') + (v.tooth ? ' (зуб ' + v.tooth + ')' : '') +
+          '<div class="visit-phone">' + (v.note || '') + '</div></div>'
+        ).join('');
+      }
+      html += '</div>';
+      resultEl.innerHTML = html;
+    });
+  });
+
+  loadToday();
+</script>
+</body>
+</html>
