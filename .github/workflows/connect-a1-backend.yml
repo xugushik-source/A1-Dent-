@@ -1,0 +1,36 @@
+name: Connect A1 backend
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/connect-a1-backend.yml'
+permissions:
+  contents: write
+jobs:
+  connect:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Connect backend
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          url='https://script.google.com/macros/s/AKfycbxsTx_eeY26PryUQbdFvDBKz4t-2KblI5Fqw1MkV-hJo27oIITrL6_scpSpogXZuBSW6g/exec'
+          for fn in ['index.html','staff.html']:
+              p=Path(fn)
+              s=p.read_text(encoding='utf-8')
+              s=s.replace('ВСТАВЬ_СЮДА_A1_WEB_APP_URL',url)
+              p.write_text(s,encoding='utf-8')
+          for fn in ['index.html','staff.html']:
+              s=Path(fn).read_text(encoding='utf-8')
+              assert url in s, f'{fn}: A1 backend URL missing'
+              assert 'ВСТАВЬ_СЮДА_A1_WEB_APP_URL' not in s, f'{fn}: placeholder remains'
+          PY
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html staff.html
+          git diff --cached --quiet || git commit -m 'Connect A1 Apps Script backend'
+          git push
