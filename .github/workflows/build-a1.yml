@@ -1,0 +1,68 @@
+name: Build A1 clinic site
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copy GALADENT template
+        run: |
+          git clone --depth 1 https://github.com/xugushik-source/galadent-plus.git /tmp/template
+          cp /tmp/template/index.html /tmp/template/about.html /tmp/template/tips.html /tmp/template/staff.html /tmp/template/Code.gs .
+      - name: Adapt template to A1
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          files=['index.html','about.html','tips.html','staff.html','Code.gs']
+          reps={
+            'GALADENT+':'A1',
+            'გალადენტ+':'A1',
+            '+995514593000':'+995322800101',
+            '+995 514 59 30 00':'+995 32 280 01 01',
+            '995514593000':'995322800101',
+            'Тбилиси, Глдани':'Тбилиси, Ваке',
+            'თბილისი, გლდანი':'თბილისი, ვაკე',
+            'Gldani, Tbilisi':'Vake, Tbilisi',
+            'გლდანში, თბილისში':'ვაკეში, თბილისში',
+            'в Глдани, Тбилиси':'в Ваке, Тбилиси',
+            '41.8024154%2C44.8302084':'41.708258%2C44.774648',
+            'ChIJC4z2wyBB5awRl4ORSDbskQk':'',
+          }
+          for fn in files:
+            p=Path(fn); s=p.read_text(encoding='utf-8')
+            for a,b in reps.items(): s=s.replace(a,b)
+            # Replace embedded template logo with A1 brand logo file.
+            import re
+            s=re.sub(r'<img src="data:image/png;base64,[^"]+" alt="Логотип">', '<img src="a1-logo.svg" alt="A1">', s)
+            p.write_text(s,encoding='utf-8')
+          # Clinic-specific factual copy, without changing template structure.
+          p=Path('index.html'); s=p.read_text(encoding='utf-8')
+          s=s.replace('Здоровые зубы — <em>без очередей и звонков</em>','A1 — <em>современная стоматология в центре Тбилиси</em>')
+          s=s.replace('ჯანმრთელი კბილები — <em>რიგებისა და ზარების გარეშე</em>','A1 — <em>თანამედროვე სტომატოლოგია თბილისის ცენტრში</em>')
+          s=s.replace('Healthy teeth — <em>without queues or phone calls</em>','A1 — <em>modern dentistry in central Tbilisi</em>')
+          s=s.replace('GALADENT+ · Тбилиси, Глдани','A1 · Тбилиси, ул. Закария Палиашвили 15')
+          p.write_text(s,encoding='utf-8')
+          PY
+          cat > a1-logo.svg <<'SVG'
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="A1">
+            <circle cx="100" cy="100" r="88" fill="none" stroke="#C9974A" stroke-width="6"/>
+            <text x="38" y="139" font-family="Georgia,serif" font-size="118" font-style="italic" fill="#C9974A">A</text>
+            <text x="116" y="88" font-family="Georgia,serif" font-size="62" font-weight="700" fill="#C9974A">1</text>
+          </svg>
+          SVG
+          cat > CNAME <<'EOF'
+          
+          EOF
+      - name: Commit generated site
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html about.html tips.html staff.html Code.gs a1-logo.svg
+          git commit -m "Build A1 clinic site from approved template" || exit 0
+          git push
