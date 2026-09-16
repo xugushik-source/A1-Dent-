@@ -1,10 +1,13 @@
 name: Build A1 clinic site
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
   build:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,7 +19,6 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
-
           files=['index.html','about.html','tips.html','staff.html','Code.gs']
           reps={
             'GALADENT+':'A1', 'გალადენტ+':'A1',
@@ -27,34 +29,29 @@ jobs:
             'V microdistrict, building 26B, Vake, Tbilisi':'15 Zakaria Paliashvili St, Tbilisi',
             'V микрорайон, корпус 26Б, Ваке, Тбилиси':'ул. Закария Палиашвили, 15, Тбилиси',
             'ორშაბათი–შაბათი, 9:00–19:00':'ორშაბათი–შაბათი, 10:00–20:00',
-            'Mon–Sat, 9:00–19:00':'Mon–Sat, 10:00–20:00',
-            'Пн–Сб, 9:00–19:00':'Пн–Сб, 10:00–20:00',
+            'Mon–Sat, 9:00–19:00':'Mon–Sat, 10:00–20:00', 'Пн–Сб, 9:00–19:00':'Пн–Сб, 10:00–20:00',
             '41.8024154%2C44.8302084':'41.708258%2C44.774648',
-            'ChIJC4z2wyBB5awRl4ORSDbskQk':'ChIJ40ow9xMNREART0p0pQswV28',
+            'ChIJC4z2wyBB5awRl4ORSDbskQk':'ChIJ40ow9xMNREART0p0pQswV28'
           }
           for fn in files:
             p=Path(fn); s=p.read_text(encoding='utf-8')
             for a,b in reps.items(): s=s.replace(a,b)
-            s=re.sub(r'href="/(?:A1-Dent-/)?(index|about|tips|staff)\.html', r'href="\1.html', s)
-            s=re.sub(r'href="https://xugushik-source\.github\.io/[^/]+/(index|about|tips|staff)\.html', r'href="\1.html', s)
-            s=re.sub(r'<img[^>]*src="data:image/[^>]+>', '<img src="a1-logo.svg" alt="A1">', s)
+            s=re.sub(r'href="/(?:A1-Dent-/)?(index|about|tips|staff)\.html',r'href="\1.html',s)
+            s=re.sub(r'href="https://xugushik-source\.github\.io/[^/]+/(index|about|tips|staff)\.html',r'href="\1.html',s)
+            s=re.sub(r'<img[^>]*src="data:image/[^>]+>','<img src="a1-logo.svg" alt="A1">',s)
             if fn in ['index.html','about.html','tips.html'] and 'a1-logo.svg' not in s:
               s=s.replace('<div class="clinic-group">','<div class="clinic-group">\n    <img src="a1-logo.svg" alt="A1">',1)
             if fn in ['about.html','tips.html']:
-              # Do not inherit GALADENT photos. Remove the complete photo containers.
-              s=re.sub(r'<div class="photo-grid">.*?</div>\s*(?=<div class="section-head">)', '', s, count=1, flags=re.S)
-              s=re.sub(r'<div class="photo">\s*<img[^>]*>\s*</div>', '', s, flags=re.S)
-              # Safety net for any remaining local photo tag from the source clinic.
-              s=re.sub(r'<img[^>]+src="(?:consultation|xray-review|reception)\.(?:jpg|jpeg|png|webp)"[^>]*>', '', s, flags=re.I)
+              s=re.sub(r'<div class="photo-grid">.*?</div>\s*(?=<div class="section-head">)','',s,count=1,flags=re.S)
+              s=re.sub(r'<div class="photo">\s*<img[^>]*>\s*</div>','',s,flags=re.S)
+              s=re.sub(r'<img[^>]+src="(?:consultation|xray-review|reception)\.(?:jpg|jpeg|png|webp)"[^>]*>','',s,flags=re.I)
             p.write_text(s,encoding='utf-8')
-
           p=Path('index.html'); s=p.read_text(encoding='utf-8')
           s=s.replace('Здоровые зубы — <em>без очередей и звонков</em>','A1 — <em>современная стоматология в центре Тбилиси</em>')
           s=s.replace('ჯანმრთელი კბილები — <em>რიგებისა და ზარების გარეშე</em>','A1 — <em>თანამედროვე სტომატოლოგია თბილისის ცენტრში</em>')
           s=s.replace('Healthy teeth — <em>without queues or phone calls</em>','A1 — <em>modern dentistry in central Tbilisi</em>')
           s=s.replace('A1 · Тбилиси, Ваке','A1 · Тбилиси, ул. Закария Палиашвили 15')
           p.write_text(s,encoding='utf-8')
-
           Path('a1-logo.svg').write_text('''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="A1"><circle cx="100" cy="100" r="88" fill="none" stroke="#C9974A" stroke-width="6"/><text x="38" y="139" font-family="Georgia,serif" font-size="118" font-style="italic" fill="#C9974A">A</text><text x="116" y="88" font-family="Georgia,serif" font-size="62" font-weight="700" fill="#C9974A">1</text></svg>''',encoding='utf-8')
           PY
       - name: Validate links and local assets
@@ -71,8 +68,7 @@ jobs:
             for target in re.findall(r'(?:src|href)="([^"#?]+)"',s):
               if target.startswith(('http://','https://','tel:','mailto:','javascript:')): continue
               if target.endswith(('.html','.svg','.jpg','.jpeg','.png','.webp')) and not Path(target).exists(): bad.append(f'{fn}: missing {target}')
-          if bad:
-            print('\n'.join(bad)); sys.exit(1)
+          if bad: print('\n'.join(bad)); sys.exit(1)
           print('A1 validation passed')
           PY
       - name: Commit rebuilt site
