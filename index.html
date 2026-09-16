@@ -156,6 +156,7 @@
 </style>
 </head>
 <body class="lang-ka">
+<script>(function(){var s=localStorage.getItem('galadentLang'); if(s) document.body.className='lang-'+s;})();</script>
 
 <div class="topbar">
   <div class="clinic-group">
@@ -180,7 +181,7 @@
 <div class="wrap">
 
   <section class="hero">
-    <div data-i18n="ka"><div class="eyebrow">სტომატოლოგია ვაკეში, თბილისში</div><h1>A1 — <em>თანამედროვე სტომატოლოგია თბილისის ცენტრში</em></h1><div class="hero-sub">აირჩიეთ ვიზიტის დრო ონლაინ 30 წამში. ექიმი ყოველ ვიზიტზე ხედავს თქვენი წინა ვიზიტების ისტორიას — აღარ დაგჭირდებათ ყველაფრის თავიდან მოყოლა.</div></div>
+    <div data-i18n="ka"><div class="eyebrow">სტომატოლოგია გლდანში, თბილისში</div><h1>A1 — <em>თანამედროვე სტომატოლოგია თბილისის ცენტრში</em></h1><div class="hero-sub">აირჩიეთ ვიზიტის დრო ონლაინ 30 წამში. ექიმი ყოველ ვიზიტზე ხედავს თქვენი წინა ვიზიტების ისტორიას — აღარ დაგჭირდებათ ყველაფრის თავიდან მოყოლა.</div></div>
     <div data-i18n="en"><div class="eyebrow">Dentistry in Vake, Tbilisi</div><h1>A1 — <em>modern dentistry in central Tbilisi</em></h1><div class="hero-sub">Choose your visit time online in 30 seconds. Your dentist sees your visit history at every appointment — no need to explain everything from scratch.</div></div>
     <div data-i18n="ru"><div class="eyebrow">Стоматология в Ваке, Тбилиси</div><h1>A1 — <em>современная стоматология в центре Тбилиси</em></h1><div class="hero-sub">Выберите время онлайн за 30 секунд. Врач видит вашу историю посещений при каждом визите — не нужно ничего пересказывать заново.</div></div>
 
@@ -188,7 +189,7 @@
       <a href="#booking" class="btn-main"><span data-i18n="ka">ონლაინ ჩაწერა</span><span data-i18n="ru">Записаться онлайн</span><span data-i18n="en">Book online</span></a>
       <a class="btn-ghost" href="https://wa.me/995322800101" target="_blank">WhatsApp</a>
     </div>
-    <a class="route-link" href="https://www.google.com/maps/dir/?api=1&amp;origin=My+Location&amp;destination=41.708258%2C44.774648&amp;destination_place_id=&amp;travelmode=driving" target="_blank" rel="noopener">
+    <a class="route-link" href="https://www.google.com/maps/dir/?api=1&amp;origin=My+Location&amp;destination=41.708258%2C44.774648&amp;destination_place_id=ChIJ40ow9xMNREART0p0pQswV28&amp;travelmode=driving" target="_blank" rel="noopener">
       <span aria-hidden="true">⌖</span>
       <span data-i18n="ka">მარშრუტის აგება კლინიკამდე</span>
       <span data-i18n="ru">Построить маршрут до клиники</span>
@@ -422,6 +423,7 @@
     document.body.className = 'lang-' + lang;
     document.documentElement.lang = lang;
     document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.setlang === lang));
+    localStorage.setItem('galadentLang', lang);
     renderPriceList();
     recalcCalculator();
     loadSlots();
@@ -544,9 +546,14 @@
 
   dateInput.addEventListener('change', loadSlots);
 
-  renderPriceList();
-  recalcCalculator();
-  loadSlots();
+  const savedLang = localStorage.getItem('galadentLang');
+  if (savedLang && savedLang !== 'ka') {
+    setLang(savedLang);
+  } else {
+    renderPriceList();
+    recalcCalculator();
+    loadSlots();
+  }
 </script>
 </body>
 </html>
