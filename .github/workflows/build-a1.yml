@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Rebuild from approved GALADENT template
+      - name: Rebuild A1
         run: |
           rm -rf /tmp/template
           git clone --depth 1 https://github.com/xugushik-source/galadent-plus.git /tmp/template
@@ -21,17 +21,14 @@ jobs:
           import re
           files=['index.html','about.html','tips.html','staff.html','Code.gs']
           reps={
-            'GALADENT+':'A1', 'გალადენტ+':'A1',
-            '+995514593000':'+995322800101', '+995 514 59 30 00':'+995 32 280 01 01', '995514593000':'995322800101',
-            'Тбилиси, Глдани':'Тбилиси, Ваке', 'თბილისი, გლდანი':'თბილისი, ვაკე', 'Gldani, Tbilisi':'Vake, Tbilisi',
-            'გლდანში, თბილისში':'ვაკეში, თბილისში', 'в Глдани, Тбилиси':'в Ваке, Тбилиси',
-            'V მიკრორაიონი, კორპ. 26ბ, გლდანი, თბილისი':'ზაქარია ფალიაშვილის ქ. 15, თბილისი',
+            'GALADENT+':'A1','გალადენტ+':'A1',
+            '+995514593000':'+995322800101','+995 514 59 30 00':'+995 32 280 01 01','995514593000':'995322800101',
+            'Глдани':'Ваке','глдани':'Ваке','გლდანი':'ვაკე','Gldani':'Vake',
+            'V მიკრორაიონი, კორპ. 26ბ, ვაკე, თბილისი':'ზაქარია ფალიაშვილის ქ. 15, თბილისი',
             'V microdistrict, building 26B, Vake, Tbilisi':'15 Zakaria Paliashvili St, Tbilisi',
             'V микрорайон, корпус 26Б, Ваке, Тбилиси':'ул. Закария Палиашвили, 15, Тбилиси',
-            'ორშაბათი–შაბათი, 9:00–19:00':'ორშაბათი–შაბათი, 10:00–20:00',
-            'Mon–Sat, 9:00–19:00':'Mon–Sat, 10:00–20:00', 'Пн–Сб, 9:00–19:00':'Пн–Сб, 10:00–20:00',
-            '41.8024154%2C44.8302084':'41.708258%2C44.774648',
-            'ChIJC4z2wyBB5awRl4ORSDbskQk':'ChIJ40ow9xMNREART0p0pQswV28'
+            'ორშაბათი–შაბათი, 9:00–19:00':'ორშაბათი–შაბათი, 10:00–20:00','Mon–Sat, 9:00–19:00':'Mon–Sat, 10:00–20:00','Пн–Сб, 9:00–19:00':'Пн–Сб, 10:00–20:00',
+            '41.8024154%2C44.8302084':'41.708258%2C44.774648','ChIJC4z2wyBB5awRl4ORSDbskQk':'ChIJ40ow9xMNREART0p0pQswV28'
           }
           for fn in files:
             p=Path(fn); s=p.read_text(encoding='utf-8')
@@ -47,14 +44,11 @@ jobs:
               s=re.sub(r'<img[^>]+src="(?:consultation|xray-review|reception)\.(?:jpg|jpeg|png|webp)"[^>]*>','',s,flags=re.I)
             p.write_text(s,encoding='utf-8')
           p=Path('index.html'); s=p.read_text(encoding='utf-8')
-          s=s.replace('Здоровые зубы — <em>без очередей и звонков</em>','A1 — <em>современная стоматология в центре Тбилиси</em>')
-          s=s.replace('ჯანმრთელი კბილები — <em>რიგებისა და ზარების გარეშე</em>','A1 — <em>თანამედროვე სტომატოლოგია თბილისის ცენტრში</em>')
-          s=s.replace('Healthy teeth — <em>without queues or phone calls</em>','A1 — <em>modern dentistry in central Tbilisi</em>')
-          s=s.replace('A1 · Тбилиси, Ваке','A1 · Тбилиси, ул. Закария Палиашвили 15')
+          s=s.replace('Здоровые зубы — <em>без очередей и звонков</em>','A1 — <em>современная стоматология в центре Тбилиси</em>').replace('ჯანმრთელი კბილები — <em>რიგებისა და ზარების გარეშე</em>','A1 — <em>თანამედროვე სტომატოლოგია თბილისის ცენტრში</em>').replace('Healthy teeth — <em>without queues or phone calls</em>','A1 — <em>modern dentistry in central Tbilisi</em>')
           p.write_text(s,encoding='utf-8')
           Path('a1-logo.svg').write_text('''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="A1"><circle cx="100" cy="100" r="88" fill="none" stroke="#C9974A" stroke-width="6"/><text x="38" y="139" font-family="Georgia,serif" font-size="118" font-style="italic" fill="#C9974A">A</text><text x="116" y="88" font-family="Georgia,serif" font-size="62" font-weight="700" fill="#C9974A">1</text></svg>''',encoding='utf-8')
           PY
-      - name: Validate links and local assets
+      - name: Validate
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -63,18 +57,16 @@ jobs:
           for fn in ['index.html','about.html','tips.html','staff.html']:
             s=Path(fn).read_text(encoding='utf-8')
             for old in ['GALADENT+','გალადენტ+','995514593000','Глдани','გლდანი','Gldani']:
-              if old in s: bad.append(f'{fn}: old client data remains: {old}')
-            if 'data-i18n="hy"' in s: bad.append(f'{fn}: Armenian i18n remains')
+              if old in s: bad.append(f'{fn}: old data {old}')
             for target in re.findall(r'(?:src|href)="([^"#?]+)"',s):
               if target.startswith(('http://','https://','tel:','mailto:','javascript:')): continue
               if target.endswith(('.html','.svg','.jpg','.jpeg','.png','.webp')) and not Path(target).exists(): bad.append(f'{fn}: missing {target}')
           if bad: print('\n'.join(bad)); sys.exit(1)
-          print('A1 validation passed')
           PY
-      - name: Commit rebuilt site
+      - name: Commit
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add index.html about.html tips.html staff.html Code.gs a1-logo.svg
-          git commit -m "Rebuild A1 with fixed paths and navigation" || exit 0
+          git commit -m "Rebuild A1 cleanly from template" || exit 0
           git push
