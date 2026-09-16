@@ -2,8 +2,7 @@ name: Connect A1 backend
 on:
   workflow_dispatch:
   push:
-    paths:
-      - '.github/workflows/connect-a1-backend.yml'
+    branches: [main]
 permissions:
   contents: write
 jobs:
