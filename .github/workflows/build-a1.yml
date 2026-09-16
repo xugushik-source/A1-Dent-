@@ -28,7 +28,8 @@ jobs:
             'V microdistrict, building 26B, Vake, Tbilisi':'15 Zakaria Paliashvili St, Tbilisi',
             'V микрорайон, корпус 26Б, Ваке, Тбилиси':'ул. Закария Палиашвили, 15, Тбилиси',
             'ორშაბათი–შაბათი, 9:00–19:00':'ორშაბათი–შაბათი, 10:00–20:00','Mon–Sat, 9:00–19:00':'Mon–Sat, 10:00–20:00','Пн–Сб, 9:00–19:00':'Пн–Сб, 10:00–20:00',
-            '41.8024154%2C44.8302084':'41.708258%2C44.774648','ChIJC4z2wyBB5awRl4ORSDbskQk':'ChIJ40ow9xMNREART0p0pQswV28'
+            '41.8024154%2C44.8302084':'41.708258%2C44.774648','ChIJC4z2wyBB5awRl4ORSDbskQk':'ChIJ40ow9xMNREART0p0pQswV28',
+            'https://script.google.com/macros/s/AKfycbxV1pi-zzsR7wZKEquYHu49gxslqbBu40cJcLvZ3RhtCFejJ04Ephwz_DfJXM2GTVncCA/exec':'ВСТАВЬ_СЮДА_A1_WEB_APP_URL'
           }
           for fn in files:
             p=Path(fn); s=p.read_text(encoding='utf-8')
@@ -53,7 +54,7 @@ jobs:
           p.write_text(s,encoding='utf-8')
           Path('a1-logo.svg').write_text('''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="A1"><circle cx="100" cy="100" r="88" fill="none" stroke="#C9974A" stroke-width="6"/><text x="38" y="139" font-family="Georgia,serif" font-size="118" font-style="italic" fill="#C9974A">A</text><text x="116" y="88" font-family="Georgia,serif" font-size="62" font-weight="700" fill="#C9974A">1</text></svg>''',encoding='utf-8')
           PY
-      - name: Validate
+      - name: Validate independent clinic architecture
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -61,11 +62,16 @@ jobs:
           bad=[]
           for fn in ['index.html','about.html','tips.html','staff.html']:
             s=Path(fn).read_text(encoding='utf-8')
-            for old in ['GALADENT+','გალადენტ+','995514593000','Глдани','გლდანი','Gldani']:
-              if old in s: bad.append(f'{fn}: old data {old}')
+            for old in ['GALADENT+','გალადენტ+','995514593000','Глдани','გლდანი','Gldani','AKfycbxV1pi-zzsR7wZKEquYHu49gxslqbBu40cJcLvZ3RhtCFejJ04Ephwz_DfJXM2GTVncCA']:
+              if old in s: bad.append(f'{fn}: old client data {old}')
             for target in re.findall(r'(?:src|href)="([^"#?]+)"',s):
               if target.startswith(('http://','https://','tel:','mailto:','javascript:')): continue
               if target.endswith(('.html','.svg','.jpg','.jpeg','.png','.webp')) and not Path(target).exists(): bad.append(f'{fn}: missing {target}')
+          code=Path('Code.gs').read_text(encoding='utf-8')
+          for required in ["ВСТАВЬ_СЮДА_SHEET_ID","ВСТАВЬ_СЮДА_CALENDAR_ID","case 'bookManual'","case 'listVisits'","case 'searchPatient'"]:
+            if required not in code: bad.append('Code.gs missing '+required)
+          if 'ВСТАВЬ_СЮДА_A1_WEB_APP_URL' not in Path('index.html').read_text(encoding='utf-8'): bad.append('index.html missing A1 WEB_APP_URL placeholder')
+          if 'ВСТАВЬ_СЮДА_A1_WEB_APP_URL' not in Path('staff.html').read_text(encoding='utf-8'): bad.append('staff.html missing A1 WEB_APP_URL placeholder')
           if bad: print('\n'.join(bad)); sys.exit(1)
           PY
       - name: Commit
@@ -73,5 +79,5 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add index.html about.html tips.html staff.html Code.gs a1-logo.svg
-          git commit -m "Rebuild A1 with one clinic photo" || exit 0
+          git commit -m "Rebuild A1 with independent Sheets Calendar backend" || exit 0
           git push
