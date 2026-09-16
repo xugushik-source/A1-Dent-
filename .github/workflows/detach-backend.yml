@@ -1,0 +1,52 @@
+name: Detach A1 booking backend
+
+on:
+  push:
+    paths:
+      - '.github/workflows/detach-backend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  detach:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Give A1 its own backend connection placeholder
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          old = 'https://script.google.com/macros/s/AKfycbxV1pi-zzsR7wZKEquYHu49gxslqbBu40cJcLvZ3RhtCFejJ04Ephwz_DfJXM2GTVncCA/exec'
+          new = 'ВСТАВЬ_СЮДА_A1_WEB_APP_URL'
+          for name in ['index.html','staff.html']:
+              p = Path(name)
+              s = p.read_text(encoding='utf-8')
+              s = s.replace(old, new)
+              p.write_text(s, encoding='utf-8')
+
+          code = Path('Code.gs').read_text(encoding='utf-8')
+          required = [
+              "const SHEET_ID = 'ВСТАВЬ_СЮДА_SHEET_ID'",
+              "const CALENDAR_ID = 'ВСТАВЬ_СЮДА_CALENDAR_ID'",
+              "case 'getSlots'", "case 'bookOnline'", "case 'bookManual'",
+              "case 'cancel'", "case 'reschedule'", "case 'updateVisit'",
+              "case 'listVisits'", "case 'searchPatient'"
+          ]
+          missing = [x for x in required if x not in code]
+          if missing:
+              raise SystemExit('A1 Code.gs missing GALADENT architecture: ' + ', '.join(missing))
+          if not Path('staff.html').exists():
+              raise SystemExit('staff.html is required as a separate staff cabinet')
+          combined = Path('index.html').read_text(encoding='utf-8') + Path('staff.html').read_text(encoding='utf-8')
+          if old in combined:
+              raise SystemExit('GALADENT backend URL still present in A1')
+          PY
+      - name: Commit A1 backend separation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html staff.html
+          git diff --cached --quiet || git commit -m 'Separate A1 Sheets and Calendar backend'
+          git push
