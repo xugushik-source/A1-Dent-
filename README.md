@@ -1,5 +1,7 @@
 # A1 Dental Clinic
 
-Website demo based on the approved GALADENT+ clinic template.
+Website based on the approved dental clinic template.
 
-Build target: A1, 15 Zakaria Paliashvili St, Tbilisi.
+A1, 15 Zakaria Paliashvili St, Tbilisi.
+
+Deployment refresh: 2026-09-16.
